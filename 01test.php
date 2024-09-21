@@ -1477,10 +1477,8 @@
       <!-- /.content-wrapper -->
       <footer class="main-footer">
         <div class="pull-right hidden-xs"><b>Version</b> 2.4.18</div>
-        <strong
-          >Copyright &copy; 2014-2019
-          <a href="https://adminlte.io">AdminLTE</a>.</strong
-        >
+        &copy; Copyright 2024. Made by
+        <a rel="noreferrer" target="_blank" href="https://redaalout-portfolio.web.app">REDA ALOUT</a>
         All rights reserved.
       </footer>
 

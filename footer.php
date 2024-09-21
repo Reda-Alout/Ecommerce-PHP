@@ -50,45 +50,47 @@ foreach ($result as $row) {
                                     $valid = 0;
                                     $error_message1 .= LANG_VALUE_147;
                                 } else {
-                                    // Sending email to the requested subscriber for email confirmation
-                                    // Getting activation key to send via email. also it will be saved to database until user click on the activation link.
+                                    // Compter le nombre total d'abonnés
+                                    $statement = $pdo->prepare("SELECT COUNT(*) FROM tbl_subscriber");
+                                    $statement->execute();
+                                    $total_subscribers = $statement->fetchColumn();
+
+                                    // Calculer le nouvel ID
+                                    $new_id = $total_subscribers + 1;
+
+                                    // Générer une clé
                                     $key = md5(uniqid(rand(), true));
 
-                                    // Getting current date
+                                    // Obtenir la date actuelle
                                     $current_date = date('Y-m-d');
-
-                                    // Getting current date and time
                                     $current_date_time = date('Y-m-d H:i:s');
 
-                                    // Inserting data into the database
-                                    $statement = $pdo->prepare("INSERT INTO tbl_subscriber (subs_email, subs_date, subs_date_time, subs_hash, subs_active) VALUES (?, ?, ?, ?, ?)");
-                                    $statement->execute(array($_POST['email_subscribe'], $current_date, $current_date_time, $key, 0));
+                                    // Insertion des données dans la base de données
+                                    $statement = $pdo->prepare("INSERT INTO tbl_subscriber (subs_id, subs_email, subs_date, subs_date_time, subs_hash, subs_active) VALUES (?, ?, ?, ?, ?, ?)");
+                                    $statement->execute(array($new_id, $_POST['email_subscribe'], $current_date, $current_date_time, $key, 0));
+
 
                                     // Sending Confirmation Email
                                     $to = $_POST['email_subscribe'];
                                     $subject = 'Subscriber Email Confirmation';
 
-                                    // Getting the url of the verification link
-                                    $verification_url = BASE_URL . 'verify.php?email=' . $to . '&key=' . $key;
-
 
                                     $message = '<p>Thanks for your interest in subscribing to our newsletter!<br><br>Please click this link to confirm your subscription:<br> 
-                                    <a href=" http://localhost/ecommerce/verifysubs.php?email=' . $to . '&key=' . $key.'">This link will be active only for 24 hours.</a>';
-
+                                    <a href="' . $_ENV['BASE_URL'] . 'verify.php?email=' . $to . '&key=' . $key . '">This link will be active only for 24 hours.</a>';
 
                                     $mail = new PHPMailer(true); // Create a new PHPMailer instance
 
                                     try {
                                         $mail->isSMTP(); // Send using SMTP
-                                        $mail->Host = 'smtp.gmail.com'; // Set the SMTP server to send through
+                                        $mail->Host = $_ENV['SMTP_HOST']; // Set the SMTP server to send through
                                         $mail->SMTPAuth = true; // Enable SMTP authentication
-                                        $mail->Username = 'aex5484@gmail.com'; // SMTP username
-                                        $mail->Password = 'eafgspgkwaibfvxp'; // SMTP password
-                                        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // Enable implicit TLS encryption
-                                        $mail->Port = 465; // TCP port to connect to
-
+                                        $mail->Username = $_ENV['SMTP_USERNAME']; // SMTP username
+                                        $mail->Password = $_ENV['SMTP_PASSWORD']; // SMTP password
+                                        $mail->SMTPSecure = $_ENV['SMTP_ENCRYPTION']; // Enable implicit TLS encryption
+                                        $mail->Port = $_ENV['SMTP_PORT']; // TCP port to connect to
+                                        
                                         // Recipients
-                                        $mail->setFrom('aex5484@gmail.com');
+                                        $mail->setFrom($_ENV['SMTP_USERNAME']);                                        
                                         $mail->addAddress($to); // Add a recipient
 
                                         // Content
@@ -117,9 +119,11 @@ foreach ($result as $row) {
                         <?php $csrf->echoInputField(); ?>
                         <h2><?php echo LANG_VALUE_93; ?></h2>
                         <div class="input-group">
-                            <input type="email" class="form-control" placeholder="<?php echo LANG_VALUE_95; ?>" name="email_subscribe">
+                            <input type="email" class="form-control" placeholder="<?php echo LANG_VALUE_95; ?>"
+                                name="email_subscribe">
                             <span class="input-group-btn">
-                                <button class="btn btn-theme" type="submit" name="form_subscribe"><?php echo LANG_VALUE_92; ?></button>
+                                <button class="btn btn-theme" type="submit"
+                                    name="form_subscribe"><?php echo LANG_VALUE_92; ?></button>
                             </span>
                         </div>
                     </form>
@@ -134,7 +138,9 @@ foreach ($result as $row) {
     <div class="container">
         <div class="row">
             <div class="col-md-12 copyright">
-                <?php echo $footer_copyright; ?>
+            &copy; Copyright 2024. Made by
+        <a rel="noreferrer" target="_blank" href="https://redaalout-portfolio.web.app">REDA ALOUT</a>
+        All rights reserved.
             </div>
         </div>
     </div>
@@ -168,65 +174,69 @@ foreach ($result as $row) {
 <script src="assets/js/select2.full.min.js"></script>
 <script src="assets/js/custom.js"></script>
 <script>
-    function confirmDelete() {
-        return confirm("Sure you want to delete this data?");
-    }
-    $(document).ready(function () {
+function confirmDelete() {
+    return confirm("Sure you want to delete this data?");
+}
+$(document).ready(function() {
+    advFieldsStatus = $('#advFieldsStatus').val();
+
+    $('#paypal_form').hide();
+    $('#stripe_form').hide();
+    $('#bank_form').hide();
+
+    $('#advFieldsStatus').on('change', function() {
         advFieldsStatus = $('#advFieldsStatus').val();
-
-        $('#paypal_form').hide();
-        $('#stripe_form').hide();
-        $('#bank_form').hide();
-
-        $('#advFieldsStatus').on('change', function() {
-            advFieldsStatus = $('#advFieldsStatus').val();
-            if (advFieldsStatus == '') {
-                $('#paypal_form').hide();
-                $('#stripe_form').hide();
-                $('#bank_form').hide();
-            } else if (advFieldsStatus == 'PayPal') {
-                $('#paypal_form').show();
-                $('#stripe_form').hide();
-                $('#bank_form').hide();
-            } else if (advFieldsStatus == 'Stripe') {
-                $('#paypal_form').hide();
-                $('#stripe_form').show();
-                $('#bank_form').hide();
-            } else if (advFieldsStatus == 'Bank Deposit') {
-                $('#paypal_form').hide();
-                $('#stripe_form').hide();
-                $('#bank_form').show();
-            }
-        });
-    });
-
-    $(document).on('submit', '#stripe_form', function () {
-        // createToken returns immediately - the supplied callback submits the form if there are no errors
-        $('#submit-button').prop("disabled", true);
-        $("#msg-container").hide();
-        Stripe.card.createToken({
-            number: $('.card-number').val(),
-            cvc: $('.card-cvc').val(),
-            exp_month: $('.card-expiry-month').val(),
-            exp_year: $('.card-expiry-year').val()
-            // name: $('.card-holder-name').val()
-        }, stripeResponseHandler);
-        return false;
-    });
-    Stripe.setPublishableKey('<?php echo $stripe_public_key; ?>');
-    function stripeResponseHandler(status, response) {
-        if (response.error) {
-            $('#submit-button').prop("disabled", false);
-            $("#msg-container").html('<div style="color: red; border: 1px solid; margin: 10px 0px; padding: 5px;"><strong>Error:</strong> ' + response.error.message + '</div>');
-            $("#msg-container").show();
-        } else {
-            var form$ = $("#stripe_form");
-            var token = response['id'];
-            form$.append("<input type='hidden' name='stripeToken' value='" + token + "' />");
-            form$.get(0).submit();
+        if (advFieldsStatus == '') {
+            $('#paypal_form').hide();
+            $('#stripe_form').hide();
+            $('#bank_form').hide();
+        } else if (advFieldsStatus == 'PayPal') {
+            $('#paypal_form').show();
+            $('#stripe_form').hide();
+            $('#bank_form').hide();
+        } else if (advFieldsStatus == 'Stripe') {
+            $('#paypal_form').hide();
+            $('#stripe_form').show();
+            $('#bank_form').hide();
+        } else if (advFieldsStatus == 'Bank Deposit') {
+            $('#paypal_form').hide();
+            $('#stripe_form').hide();
+            $('#bank_form').show();
         }
+    });
+});
+
+$(document).on('submit', '#stripe_form', function() {
+    // createToken returns immediately - the supplied callback submits the form if there are no errors
+    $('#submit-button').prop("disabled", true);
+    $("#msg-container").hide();
+    Stripe.card.createToken({
+        number: $('.card-number').val(),
+        cvc: $('.card-cvc').val(),
+        exp_month: $('.card-expiry-month').val(),
+        exp_year: $('.card-expiry-year').val()
+        // name: $('.card-holder-name').val()
+    }, stripeResponseHandler);
+    return false;
+});
+Stripe.setPublishableKey('<?php echo $stripe_public_key; ?>');
+
+function stripeResponseHandler(status, response) {
+    if (response.error) {
+        $('#submit-button').prop("disabled", false);
+        $("#msg-container").html(
+            '<div style="color: red; border: 1px solid; margin: 10px 0px; padding: 5px;"><strong>Error:</strong> ' +
+            response.error.message + '</div>');
+        $("#msg-container").show();
+    } else {
+        var form$ = $("#stripe_form");
+        var token = response['id'];
+        form$.append("<input type='hidden' name='stripeToken' value='" + token + "' />");
+        form$.get(0).submit();
     }
+}
 </script>
 <?php echo $before_body; ?>
 </body>
+
 </html>

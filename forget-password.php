@@ -59,21 +59,21 @@ if (isset($_POST['form1'])) {
         
         //$message = '<p>'.LANG_VALUE_142.'<br> <a href="'.BASE_URL.'reset-password.php?email='.$_POST['cust_email'].'&token='.$token.'">Click here</a>';
 
-        $message = '<p>'.LANG_VALUE_142.'<br> <a href=" http://localhost/ecommerce/reset-password.php?email='.$_POST['cust_email'].'&token='.$token.'">Click here</a>';
+        $message = '<p>'.LANG_VALUE_142.'<br> <a href=" ' . $_ENV['BASE_URL'] . 'reset-password.php?email='.$_POST['cust_email'].'&token='.$token.'">Click here</a>';
 
         $mail = new PHPMailer(true); // Create a new PHPMailer instance
 
         try {
             $mail->isSMTP(); // Send using SMTP
-            $mail->Host = 'smtp.gmail.com'; // Set the SMTP server to send through
+            $mail->Host = $_ENV['SMTP_HOST']; // Set the SMTP server to send through
             $mail->SMTPAuth = true; // Enable SMTP authentication
-            $mail->Username = 'aex5484@gmail.com'; // SMTP username
-            $mail->Password = 'eafgspgkwaibfvxp'; // SMTP password
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // Enable implicit TLS encryption
-            $mail->Port = 465; // TCP port to connect to
-
+            $mail->Username = $_ENV['SMTP_USERNAME']; // SMTP username
+            $mail->Password = $_ENV['SMTP_PASSWORD']; // SMTP password
+            $mail->SMTPSecure = $_ENV['SMTP_ENCRYPTION']; // Enable implicit TLS encryption
+            $mail->Port = $_ENV['SMTP_PORT']; // TCP port to connect to
+            
             // Recipients
-            $mail->setFrom('aex5484@gmail.com');
+            $mail->setFrom($_ENV['SMTP_USERNAME']);            
             $mail->addAddress($_POST['cust_email']); // Add a recipient
 
             // Content
